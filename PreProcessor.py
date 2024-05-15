@@ -49,25 +49,24 @@ def files_to_songs(files,songs={}):
             except:
                 print("Couldn't load :",file)
                 continue
-            ticks_per_beat = midi_file.ticks_per_beat
             matrix = []
             for msg in midi_file:
                 if msg.type == "note_on":
-                    matrix.append([msg.channel, msg.note, msg.velocity, int(msg.time*ticks_per_beat)])
+                    matrix.append([msg.channel, msg.note, msg.velocity, msg.time])
             songs[file] = np.array(matrix)
     return songs
 
-def dicts_from_songs(songs,velocities_and_ticks=False):
+def dicts_from_songs(songs,velocities_and_times=False):
     Channels = set()
     Notes = set()
-    if velocities_and_ticks:
+    if velocities_and_times:
         Velocities = set()
-        Ticks = set()
+        Times = set()
         for song in songs.values():
             Channels.update(song[:,0])
             Notes.update(song[:,1])
             Velocities.update(song[:,2])
-            Ticks.update(song[:,3])
+            Times.update(song[:,3])
     else:
         for song in songs.values():
             Channels.update(song[:,0])
@@ -76,33 +75,33 @@ def dicts_from_songs(songs,velocities_and_ticks=False):
     channel_to_ind = {}
     ind_to_channel = {}
     for i, channel in enumerate(sorted(Channels)):
-        channel_to_ind[channel] = i
-        ind_to_channel[i] = channel
+        channel_to_ind[int(channel)] = i
+        ind_to_channel[i] = int(channel)
         
     note_to_ind = {}
     ind_to_note = {}
     for i, note in enumerate(sorted(Notes)):
-        note_to_ind[note] = i
-        ind_to_note[i] = note
+        note_to_ind[int(note)] = i
+        ind_to_note[i] = int(note)
         
-    if velocities_and_ticks:
+    if velocities_and_times:
         velocity_to_ind = {}
         ind_to_velocity = {}
         for i, velocity in enumerate(sorted(Velocities)):
-            velocity_to_ind[velocity] = i
-            ind_to_velocity[i] = velocity
+            velocity_to_ind[int(velocity)] = i
+            ind_to_velocity[i] = int(velocity)
 
-        tick_to_ind = {}
-        ind_to_tick = {}
-        for i, tick in enumerate(sorted(Ticks)):
-            tick_to_ind[tick] = i
-            ind_to_tick[i] = tick
-        return channel_to_ind, ind_to_channel, note_to_ind, ind_to_note, velocity_to_ind, ind_to_velocity, tick_to_ind, ind_to_tick
+        time_to_ind = {}
+        ind_to_time = {}
+        for i, time in enumerate(sorted(Times)):
+            time_to_ind[time] = i
+            ind_to_time[i] = time
+        return channel_to_ind, ind_to_channel, note_to_ind, ind_to_note, velocity_to_ind, ind_to_velocity, time_to_ind, ind_to_time
     return channel_to_ind, ind_to_channel, note_to_ind, ind_to_note
 
 def ranges_from_songs(songs,channels_and_notes=False):
     range_velocities = [np.inf,-np.inf]
-    range_ticks = [np.inf,-np.inf]
+    range_times = [np.inf,-np.inf]
     if channels_and_notes:
         range_channels = [np.inf,-np.inf]
         range_notes = [np.inf,-np.inf]
@@ -113,27 +112,27 @@ def ranges_from_songs(songs,channels_and_notes=False):
             max_note = max(song[:,1])
             min_vel = min(song[:,2])
             max_vel = max(song[:,2])
-            min_tick = min(song[:,3])
-            max_tick = max(song[:,3])
+            min_time = min(song[:,3])
+            max_time = max(song[:,3])
             if min_chan < range_channels[0] : range_channels[0] = min_chan
             if max_chan > range_channels[1] : range_channels[1] = max_chan
             if min_note < range_notes[0] : range_notes[0] = min_note
             if max_note > range_notes[1] : range_notes[1] = max_note
             if min_vel < range_velocities[0] : range_velocities[0] = min_vel
             if max_vel > range_velocities[1] : range_velocities[1] = max_vel
-            if min_tick < range_ticks[0] : range_ticks[0] = min_tick
-            if max_tick > range_ticks[1] : range_ticks[1] = max_tick
-        return range_channels, range_notes, range_velocities, range_ticks
+            if min_time < range_times[0] : range_times[0] = min_time
+            if max_time > range_times[1] : range_times[1] = max_time
+        return [int(a) for a in range_channels], [int(a) for a in range_notes], [int(a) for a in range_velocities], range_times
     for song in songs.values():
         min_vel = min(song[:,2])
         max_vel = max(song[:,2])
-        min_tick = min(song[:,3])
-        max_tick = max(song[:,3])
+        min_time = min(song[:,3])
+        max_time = max(song[:,3])
         if min_vel < range_velocities[0] : range_velocities[0] = min_vel
         if max_vel > range_velocities[1] : range_velocities[1] = max_vel
-        if min_tick < range_ticks[0] : range_ticks[0] = min_tick
-        if max_tick > range_ticks[1] : range_ticks[1] = max_tick
-    return range_velocities, range_ticks
+        if min_time < range_times[0] : range_times[0] = min_time
+        if max_time > range_times[1] : range_times[1] = max_time
+    return [int(a) for a in range_velocities], range_times
 
 def one_hot_encode(char_to_ind,sequence):
     k = len(char_to_ind)
