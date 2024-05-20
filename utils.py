@@ -249,3 +249,39 @@ def prep_data(seq_length, ClassicSongs,n_Channels,n_Notes,channel_to_ind,note_to
     y_Times = y_Times[train_indices,:,:]
 
     return X_Channels, X_Notes, X_Velocities, X_Times, y_Channels, y_Notes, y_Velocities, y_Times, Val_X_Channels, Val_X_Notes, Val_X_Velocities, Val_X_Times, Val_y_Channels, Val_y_Notes, Val_y_Velocities, Val_y_Times, Test_X_Channels, Test_X_Notes, Test_X_Velocities, Test_X_Times, Test_y_Channels, Test_y_Notes, Test_y_Velocities, Test_y_Times
+
+def create_model(modelType,dims):
+    if isinstance(dims,int): dims = [dims]
+        
+    # Define input layer
+    input_channels = Input(shape=(None, n_Channels))
+    input_notes = Input(shape=(None, n_Notes))
+    input_velocities = Input(shape=(None, n_Velocities))
+    input_times = Input(shape=(None, 1))
+    
+    mainLayers = []
+    # Define main layers    
+    if modelType=="RNN" : mainLayers.append(SimpleRNN(units=dims[0], return_sequences=True)(concatenate([input_channels, input_notes, input_velocities, input_times])))
+    elif modelType=="LSTM" : mainLayers.append(LSTM(units=dims[0], return_sequences=True)(concatenate([input_channels, input_notes, input_velocities, input_times])))
+    elif modelType=="GRU": mainLayers.append(GRU(units=dims[0], return_sequences=True)(concatenate([input_channels, input_notes, input_velocities, input_times])))
+    
+    for i in range(len(dims)-1):
+        if modelType=="RNN" : mainLayers.append(SimpleRNN(units=dims[i+1], return_sequences=True)(mainLayers[i]))
+        elif modelType=="LSTM" : mainLayers.append(LSTM(units=dims[i+1], return_sequences=True)(mainLayers[i]))
+        elif modelType=="GRU": mainLayers.append(GRU(units=dims[i+1], return_sequences=True)(mainLayers[i]))
+    output = mainLayers[len(dims)-1]
+        
+    # Define Dense layer for each branch
+    channels_output = Dense(units=n_Channels)(output)
+    notes_output = Dense(units=n_Notes)(output)
+    velocities_output = Dense(units=n_Velocities)(output)
+    times_output = Dense(units=1)(output)
+
+    # Use Lambda layer to split the output into two branches
+    final_channels = Softmax(name="Channels")(channels_output)
+    final_notes = Softmax(name="Notes")(notes_output)
+    final_velocities = Softmax(name="Velocities")(velocities_output)
+    final_times = Lambda(lambda x: (tf.sigmoid(x) * (time_range[1] - time_range[0]) + time_range[0]), name="Times")(times_output)
+
+    # Define the model with inputs and outputs
+    return Model(inputs=[input_channels, input_notes, input_velocities, input_times], outputs=[final_channels, final_notes, final_velocities, final_times], name=modelType+"_model")
