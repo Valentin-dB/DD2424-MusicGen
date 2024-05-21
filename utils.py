@@ -2,6 +2,8 @@ import numpy as np
 import PreProcessor as pp
 import tensorflow as tf
 import matplotlib.pyplot as plt
+from tensorflow.keras.layers import Input, SimpleRNN, LSTM, GRU, Dense, Lambda, Softmax, Activation, concatenate
+from tensorflow.keras.models import Model
 
 def sample_probas(vec, mode, T):
     output = []
@@ -250,7 +252,7 @@ def prep_data(seq_length, ClassicSongs,n_Channels,n_Notes,channel_to_ind,note_to
 
     return X_Channels, X_Notes, X_Velocities, X_Times, y_Channels, y_Notes, y_Velocities, y_Times, Val_X_Channels, Val_X_Notes, Val_X_Velocities, Val_X_Times, Val_y_Channels, Val_y_Notes, Val_y_Velocities, Val_y_Times, Test_X_Channels, Test_X_Notes, Test_X_Velocities, Test_X_Times, Test_y_Channels, Test_y_Notes, Test_y_Velocities, Test_y_Times
 
-def create_model(modelType,dims):
+def create_model(modelType,dims,n_Channels,n_Notes,n_Velocities,time_range):
     if isinstance(dims,int): dims = [dims]
         
     # Define input layer
