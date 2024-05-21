@@ -47,7 +47,7 @@ def files_to_songs(files,songs={}):
             try:
                 midi_file = mido.MidiFile(file)
             except:
-                print("Couldn't load :",file)
+                #print("Couldn't load :",file)
                 continue
             matrix = []
             for msg in midi_file:
