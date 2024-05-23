@@ -4,8 +4,10 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from tensorflow.keras.layers import Input, SimpleRNN, LSTM, GRU, Dense, Lambda, Softmax, Activation, concatenate
 from tensorflow.keras.models import Model
+import pygame
+from mido import Message, MetaMessage, MidiFile, MidiTrack, bpm2tempo, second2tick
 
-def sample_probas(vec, mode, T):
+def sample_probas(vec, mode, T, velo_one_hot=False):
     output = []
     if mode == "Max":
         channels = np.zeros_like(vec[0])
@@ -17,6 +19,12 @@ def sample_probas(vec, mode, T):
         i = np.argmax(vec[1][0,0,:])
         notes[0,0,i] = 1
         output += [notes]
+        
+        if velo_one_hot:
+            velos = np.zeros_like(vec[2])
+            i = np.argmax(vec[2][0,0,:])
+            velos[0,0,i] = 1
+            output += [velos]
     
     elif mode == "Original":
         p = vec[0][0,0,:]
@@ -30,6 +38,13 @@ def sample_probas(vec, mode, T):
         i = np.random.choice(range(len(p)),p=p)
         notes[0,0,i] = 1
         output += [notes]
+        
+        if velo_one_hot:
+            p = vec[2][0,0,:]
+            velos = np.zeros_like(vec[2])
+            i = np.random.choice(range(len(p)),p=p)
+            velos[0,0,i] = 1
+            output += [velos]
     
     elif mode == "SoftMax":
         q = np.log(vec[0][0,0,:])
@@ -47,6 +62,15 @@ def sample_probas(vec, mode, T):
         i = np.random.choice(range(len(p)),p=p)
         notes[0,0,i] = 1
         output += [notes]
+        
+        if velo_one_hot:
+            q = np.log(vec[2][0,0,:])
+            p = np.exp((q - np.max(q))/T)
+            p = p/np.sum(p)
+            velos = np.zeros_like(vec[2])
+            i = np.random.choice(range(len(p)),p=p)
+            velos[0,0,i] = 1
+            output += [velos]
         
     elif mode == "NucleusSampling":
         p = vec[0][0,0,:]
@@ -71,7 +95,19 @@ def sample_probas(vec, mode, T):
         notes[0,0,i] = 1
         output += [notes]
         
-    output += [np.rint(vec[2]).astype(int)]
+        if velo_one_hot:
+            p = vec[2][0,0,:]
+            sorted_p = np.sort(p)[::-1]
+            cum_p = np.cumsum(sorted_p)
+            k = np.sum(cum_p < T) + 1
+            indices = np.argsort(p)[:-k]
+            p[indices] = 0
+            i = np.random.choice(range(len(p)),p=p/cum_p[k-1])
+            velos = np.zeros_like(vec[2])
+            velos[0,0,i] = 1
+            output += [velos]
+        
+    if not velo_one_hot : output += [np.rint(vec[2]).astype(int)]
     output += [vec[3]]
     return output
 
@@ -287,3 +323,30 @@ def create_model(modelType,dims,n_Channels,n_Notes,n_Velocities,time_range):
 
     # Define the model with inputs and outputs
     return Model(inputs=[input_channels, input_notes, input_velocities, input_times], outputs=[final_channels, final_notes, final_velocities, final_times], name=modelType+"_model")
+
+def play_music(X,tempo=1e4,save=None):
+    channels = X[0]
+    notes = X[1]
+    velocities = X[2]
+    time = X[3]
+    time = [int(l*tempo) for l in time]
+    
+    mid = MidiFile()
+    track = MidiTrack()
+    mid.tracks.append(track)
+
+    track.append(MetaMessage('key_signature', key='Dm'))
+    track.append(MetaMessage('set_tempo', tempo=bpm2tempo(tempo)))
+    track.append(MetaMessage('time_signature', numerator=6, denominator=8))
+
+    for i in range(len(channels)):
+        track.append(Message('note_on', channel=channels[i], note=notes[i], velocity=velocities[i], time=time[i]))
+    track.append(MetaMessage('end_of_track'))
+    pygame.init()
+    if save is not None :
+        mid.save(save)
+        pygame.mixer.music.load(save)
+    else :
+        mid.save('new_song.mid')
+        pygame.mixer.music.load("new_song.mid")
+    pygame.mixer.music.play()
