@@ -153,13 +153,13 @@ def rounded_accuracy(y_true, y_pred):
     return accuracy
 
 def tol_accuracy(y_true, y_pred):
-    threshold = 0.1
+    threshold = 0.01
     difference = tf.abs(tf.subtract(y_true, y_pred)) - threshold
     correct_predictions = tf.where(difference <= 0, True, False)
     accuracy = tf.reduce_mean(tf.cast(correct_predictions, tf.float32))
     return accuracy
 
-def plot_training_results(title,loss,channels_accuracy,notes_accuracy,velocities_accuracy,times_accuracy,val_loss,val_channels_accuracy,val_notes_accuracy,val_velocities_accuracy,val_times_accuracy):
+def plot_training_results(title,loss,channels_accuracy,notes_accuracy,velocities_accuracy,times_accuracy,channels_loss,notes_loss,velocities_loss,times_loss,val_loss,val_channels_accuracy,val_notes_accuracy,val_velocities_accuracy,val_times_accuracy,val_channels_loss,val_notes_loss,val_velocities_loss,val_times_loss):
     n = len(loss)+1
     x = range(1,n)
     x_ticks = range(1,n,max(1,n//10))
@@ -179,7 +179,7 @@ def plot_training_results(title,loss,channels_accuracy,notes_accuracy,velocities
     axs[0,0].plot(x, channels_accuracy, label="Training set")
     axs[0,0].plot(x, val_channels_accuracy, label="Validation set")
     axs[0,0].legend()
-    axs[0,0].set_ylim([0,1])
+    #axs[0,0].set_ylim([0,1])
     axs[0,0].set_title("Channels")
     axs[0,0].set_xlabel("Number of epochs")
     axs[0,0].set_ylabel("Accuracy")
@@ -188,7 +188,7 @@ def plot_training_results(title,loss,channels_accuracy,notes_accuracy,velocities
     axs[0,1].plot(x, notes_accuracy, label="Training set")
     axs[0,1].plot(x, val_notes_accuracy, label="Validation set")
     axs[0,1].legend()
-    axs[0,1].set_ylim([0,1])
+    #axs[0,1].set_ylim([0,1])
     axs[0,1].set_title("Notes")
     axs[0,1].set_xlabel("Number of epochs")
     axs[0,1].set_ylabel("Accuracy")
@@ -197,7 +197,7 @@ def plot_training_results(title,loss,channels_accuracy,notes_accuracy,velocities
     axs[1,0].plot(x, velocities_accuracy, label="Training set")
     axs[1,0].plot(x, val_velocities_accuracy, label="Validation set")
     axs[1,0].legend()
-    axs[1,0].set_ylim([0,1])
+    #axs[1,0].set_ylim([0,1])
     axs[1,0].set_title("Velocity")
     axs[1,0].set_xlabel("Number of epochs")
     axs[1,0].set_ylabel("Accuracy")
@@ -206,7 +206,49 @@ def plot_training_results(title,loss,channels_accuracy,notes_accuracy,velocities
     axs[1,1].plot(x, times_accuracy, label="Training set")
     axs[1,1].plot(x, val_times_accuracy, label="Validation set")
     axs[1,1].legend()
-    axs[1,1].set_ylim([0,1])
+    #axs[1,1].set_ylim([0,1])
+    axs[1,1].set_title("Time")
+    axs[1,1].set_xlabel("Number of epochs")
+    axs[1,1].set_ylabel("Accuracy")
+    axs[1,1].set_xticks(x_ticks)
+
+    fig.suptitle(title)
+    fig.tight_layout(rect=[0, 0, 1, 1])
+    plt.show()
+    
+    fig, axs = plt.subplots(2, 2, figsize=(9, 8))
+
+    axs[0,0].plot(x, channels_loss, label="Training set")
+    axs[0,0].plot(x, val_channels_loss, label="Validation set")
+    axs[0,0].legend()
+    #axs[0,0].set_ylim([0,1])
+    axs[0,0].set_title("Channels")
+    axs[0,0].set_xlabel("Number of epochs")
+    axs[0,0].set_ylabel("Accuracy")
+    axs[0,0].set_xticks(x_ticks)
+
+    axs[0,1].plot(x, notes_loss, label="Training set")
+    axs[0,1].plot(x, val_notes_loss, label="Validation set")
+    axs[0,1].legend()
+    #axs[0,1].set_ylim([0,1])
+    axs[0,1].set_title("Notes")
+    axs[0,1].set_xlabel("Number of epochs")
+    axs[0,1].set_ylabel("Accuracy")
+    axs[0,1].set_xticks(x_ticks)
+
+    axs[1,0].plot(x, velocities_loss, label="Training set")
+    axs[1,0].plot(x, val_velocities_loss, label="Validation set")
+    axs[1,0].legend()
+    #axs[1,0].set_ylim([0,1])
+    axs[1,0].set_title("Velocity")
+    axs[1,0].set_xlabel("Number of epochs")
+    axs[1,0].set_ylabel("Accuracy")
+    axs[1,0].set_xticks(x_ticks)
+
+    axs[1,1].plot(x, times_loss, label="Training set")
+    axs[1,1].plot(x, val_times_loss, label="Validation set")
+    axs[1,1].legend()
+    axs[1,1].set_ylim([0,10])
     axs[1,1].set_title("Time")
     axs[1,1].set_xlabel("Number of epochs")
     axs[1,1].set_ylabel("Accuracy")

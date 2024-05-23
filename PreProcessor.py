@@ -273,6 +273,7 @@ def prep_data_transformer(seq_length,ClassicSongs,n_Channels,n_Notes,n_Velocitie
 
     current_index = 0
     for song in ClassicSongs.values():
+        if song.shape[0] <= seq_length : continue
         song_x_channels, song_y_channels = label_sequences_transformer(song[:, 0].astype(int), seq_length, n_Channels)
         song_x_notes, song_y_notes = label_sequences_transformer(song[:, 1].astype(int), seq_length, n_Notes)
         song_x_velocities, song_y_velocities = label_sequences_transformer(song[:, 2].astype(int), seq_length, n_Velocities)
